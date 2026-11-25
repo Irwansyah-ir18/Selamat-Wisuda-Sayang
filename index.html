@@ -15,15 +15,6 @@
     
     <!-- Canvas Confetti -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    
-    <!-- Tone.js untuk memutar melodi "Di Akhir Perang" secara mandiri tanpa link YouTube -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-
-    <script>
-        // Simpan & muat foto secara otomatis agar tidak hilang saat halaman dibuka ulang di HP
-        const STORAGE_HERO_KEY = 'silvi_grad_hero_photo_v1';
-        const STORAGE_COLLAGE_KEY = 'silvi_grad_collage_photos_v1';
-    </script>
 
     <script>
         tailwind.config = {
@@ -128,34 +119,6 @@
         }
         ::-webkit-scrollbar-thumb:hover {
             background: #1E3A5F;
-        }
-
-        /* Polaroid Card Hover */
-        .polaroid-card {
-            transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.5s ease;
-            will-change: transform;
-        }
-        .polaroid-card:hover {
-            transform: translateY(-6px) scale(1.02) rotate(0deg) !important;
-            box-shadow: 0 16px 28px -8px rgba(15, 37, 66, 0.15);
-            z-index: 20;
-        }
-
-        /* Manual Smooth Horizontal Slide Rows (Tanpa Auto-Slide) */
-        .manual-slide-row {
-            display: flex;
-            gap: 0.5rem;
-            overflow-x: auto;
-            scroll-behavior: smooth;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-            cursor: grab;
-        }
-        .manual-slide-row::-webkit-scrollbar {
-            display: none;
-        }
-        .manual-slide-row:active {
-            cursor: grabbing;
         }
 
         /* Mobile App Viewport Framing, Smooth Scroll & Anti-Copy / Anti-Zoom */
@@ -326,6 +289,9 @@
 
     <!-- Floating Music Control Button (Bottom Right inside Mobile Shell) -->
     <div id="floating-controls" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 hidden opacity-0 transition-opacity duration-700 w-[92%] max-w-[395px] flex items-end justify-between pointer-events-none">
+        <!-- Audio element tertanam langsung di dalam halaman -->
+        <audio id="drive-bg-audio" preload="auto" loop playsinline src="data:audio/mpeg;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg//uQxAAAAGoAAAAAWGluZwAAAA8AAAADAAAK3ACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg//uQxAAABWgAAAAAWGluZwAAAA8AAAAGAAAK3ACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg//uQxAAABygAAAAAWGluZwAAAA8AAAAJAAAK3ACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg"></audio>
+
         <!-- Back to Top Button -->
         <button id="back-to-top" onclick="scrollToTop()" aria-label="Kembali ke atas" class="pointer-events-auto w-10 h-10 rounded-full bg-white/95 backdrop-blur-md text-navy-900 border border-softblue-200 shadow-md active:scale-95 flex items-center justify-center transition-all duration-300 opacity-0 pointer-events-none">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -334,7 +300,7 @@
         </button>
 
         <!-- Music Play/Pause Pill -->
-        <button id="music-toggle-btn" onclick="toggleMusic()" aria-label="Putar atau Jeda Musik" class="pointer-events-auto relative flex items-center gap-2 px-3.5 py-2 rounded-full bg-navy-900/95 backdrop-blur-md text-white shadow-lg border border-softblue-300/40 active:scale-95 transition-all cursor-pointer">
+        <button id="music-toggle-btn" onclick="toggleMusic()" aria-label="Putar Musik" class="pointer-events-auto relative flex items-center gap-2 px-3.5 py-2 rounded-full bg-navy-900/95 backdrop-blur-md text-white shadow-lg border border-softblue-300/40 active:scale-95 transition-all cursor-pointer">
             <span id="music-ping" class="hidden absolute -top-1 -right-1 flex h-2.5 w-2.5">
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-softblue-300 opacity-75"></span>
                 <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-softblue-400"></span>
@@ -393,30 +359,6 @@
                 <div class="mt-5 pt-3.5 border-t border-softblue-100 flex flex-col items-center">
                     <p class="text-xs font-bold text-navy-900">Dari Irwansyah</p>
                     <p class="text-[10px] font-medium text-softblue-500 mt-0.5">25 November 2026</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- SECTION B: GALERI SLIDE FOTO KENANGAN (3 BARIS SLIDE BANYAK FOTO TANPA TEKS KETERANGAN) -->
-        <section id="kenangan" class="px-4 py-8 reveal">
-            <div class="text-center mb-5">
-                <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-softblue-500">Our Journey</span>
-                <h2 class="font-serif text-2xl font-bold text-navy-900 mt-0.5">Momen Kenangan Bersama</h2>
-            </div>
-
-            <!-- Bingkai Kolase 3 Baris Slide Manual Smooth & Bisa Diketuk -->
-            <div class="relative bg-white/90 backdrop-blur-md p-2.5 rounded-3xl shadow-lg shadow-navy-900/10 border border-white space-y-2.5 overflow-hidden">
-                <!-- Baris 1 -->
-                <div class="w-full overflow-hidden rounded-2xl">
-                    <div id="collage-row-1" class="manual-slide-row"></div>
-                </div>
-                <!-- Baris 2 -->
-                <div class="w-full overflow-hidden rounded-2xl">
-                    <div id="collage-row-2" class="manual-slide-row"></div>
-                </div>
-                <!-- Baris 3 -->
-                <div class="w-full overflow-hidden rounded-2xl">
-                    <div id="collage-row-3" class="manual-slide-row"></div>
                 </div>
             </div>
         </section>
@@ -563,16 +505,6 @@
 
     </main>
 
-    <!-- LIGHTBOX MODAL (TANPA TEKS KETERANGAN) -->
-    <div id="photo-lightbox" onclick="closeLightbox()" class="fixed inset-0 z-50 mx-auto max-w-[430px] hidden opacity-0 transition-opacity duration-300 bg-navy-950/90 backdrop-blur-md flex items-center justify-center p-4">
-        <button onclick="closeLightbox()" aria-label="Tutup Foto" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/15 text-white flex items-center justify-center active:scale-95">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-        </button>
-        <img id="lightbox-img" src="" alt="" onclick="event.stopPropagation()" class="max-w-full max-h-[82dvh] rounded-2xl shadow-2xl object-contain">
-    </div>
-
     </div> <!-- End of #mobile-app-shell -->
 
     <!-- ==================== 6. JAVASCRIPT INTERACTIVITY ==================== -->
@@ -587,107 +519,94 @@
                 }, 700);
             }, 600);
         });
-
-        // --- 2. SYNTHESIZED MELODY ("DI AKHIR PERANG" - TANPA LINK YOUTUBE) ---
-        let isMusicPlaying = false;
-        let hasUserInteracted = false;
-        let melodyLoopTimer = null;
-        let fallbackAudioCtx = null;
-
-        // Pola melodi lembut bertempo lambat bernuansa "Di Akhir Perang" (Nadin Amizah)
-        const DI_AKHIR_PERANG_NOTES = [
-            { note: 'C4', dur: '2n', freq: 261.63, time: 0.7 },
-            { note: 'E4', dur: '4n', freq: 329.63, time: 0.45 },
-            { note: 'G4', dur: '2n', freq: 392.00, time: 0.75 },
-            { note: 'A4', dur: '4n', freq: 440.00, time: 0.45 },
-            { note: 'G4', dur: '2n', freq: 392.00, time: 0.8 },
-            { note: 'E4', dur: '4n', freq: 329.63, time: 0.45 },
-            { note: 'D4', dur: '2n', freq: 293.66, time: 0.8 },
-            { note: 'C4', dur: '2n', freq: 261.63, time: 0.9 },
-            { note: 'A3', dur: '4n', freq: 220.00, time: 0.45 },
-            { note: 'C4', dur: '4n', freq: 261.63, time: 0.45 },
-            { note: 'E4', dur: '2n', freq: 329.63, time: 0.75 },
-            { note: 'D4', dur: '4n', freq: 293.66, time: 0.45 },
-            { note: 'B3', dur: '2n', freq: 246.94, time: 0.75 },
-            { note: 'G3', dur: '2n', freq: 196.00, time: 0.85 }
+        // --- 2. EMBEDDED AUDIO PLAYER ("DI AKHIR PERANG" - ORIGINAL AUDIO ONLY) ---
+        const EMBEDDED_AUDIO_SRC = 'data:audio/mpeg;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg//uQxAAAAGoAAAAAWGluZwAAAA8AAAADAAAK3ACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg//uQxAAABWgAAAAAWGluZwAAAA8AAAAGAAAK3ACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg//uQxAAABygAAAAAWGluZwAAAA8AAAAJAAAK3ACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg';
+        const DRIVE_AUDIO_FILE_ID = '1KWFBiYPqvTq6XlWoqaAtbfBHk3S782_s';
+        const DRIVE_AUDIO_SOURCES = [
+            EMBEDDED_AUDIO_SRC,
+            `https://docs.google.com/uc?export=download&id=${DRIVE_AUDIO_FILE_ID}`,
+            `https://drive.google.com/uc?export=download&id=${DRIVE_AUDIO_FILE_ID}`
         ];
 
-        function playSoftToneFallback(freq, durationSec) {
-            try {
-                const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                if (!AudioCtx) return;
-                if (!fallbackAudioCtx) {
-                    fallbackAudioCtx = new AudioCtx();
-                }
-                if (fallbackAudioCtx.state === 'suspended') {
-                    fallbackAudioCtx.resume();
-                }
-                const now = fallbackAudioCtx.currentTime;
-                const osc = fallbackAudioCtx.createOscillator();
-                const gain = fallbackAudioCtx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(freq, now);
+        let isMusicPlaying = false;
+        let hasUserInteracted = false;
 
-                gain.gain.setValueAtTime(0.001, now);
-                gain.gain.exponentialRampToValueAtTime(0.08, now + 0.08);
-                gain.gain.exponentialRampToValueAtTime(0.0008, now + durationSec);
+        function bindDriveAudioEvents() {
+            const audioEl = document.getElementById('drive-bg-audio');
+            if (!audioEl || audioEl.dataset.bound === 'true') return;
+            audioEl.dataset.bound = 'true';
 
-                osc.connect(gain);
-                gain.connect(fallbackAudioCtx.destination);
-                osc.start(now);
-                osc.stop(now + durationSec + 0.03);
-            } catch (e) {}
+            audioEl.addEventListener('play', () => {
+                isMusicPlaying = true;
+                updateMusicUI();
+            });
+
+            audioEl.addEventListener('pause', () => {
+                isMusicPlaying = false;
+                updateMusicUI();
+            });
+
+            audioEl.addEventListener('ended', () => {
+                if (audioEl.loop) {
+                    audioEl.currentTime = 0;
+                    audioEl.play().catch(() => {});
+                }
+            });
         }
 
-        function scheduleMelodySequence(stepIndex = 0) {
-            if (!isMusicPlaying) return;
-            const current = DI_AKHIR_PERANG_NOTES[stepIndex % DI_AKHIR_PERANG_NOTES.length];
-
-            try {
-                if (typeof Tone !== 'undefined' && Tone.Synth) {
-                    if (!window.__diAkhirPerangSynth) {
-                        window.__diAkhirPerangSynth = new Tone.PolySynth(Tone.Synth, {
-                            oscillator: { type: 'sine' },
-                            envelope: { attack: 0.08, decay: 0.3, sustain: 0.35, release: 0.9 }
-                        }).toDestination();
-                        window.__diAkhirPerangSynth.volume.value = -10;
-                    }
-                    window.__diAkhirPerangSynth.triggerAttackRelease(current.note, current.dur);
-                } else {
-                    playSoftToneFallback(current.freq, current.time);
-                }
-            } catch (e) {
-                playSoftToneFallback(current.freq, current.time);
+        async function tryPlayDriveAudio(sourceIndex = 0) {
+            const audioEl = document.getElementById('drive-bg-audio');
+            if (!audioEl || sourceIndex >= DRIVE_AUDIO_SOURCES.length) {
+                isMusicPlaying = false;
+                updateMusicUI();
+                return;
             }
 
-            melodyLoopTimer = setTimeout(() => {
-                scheduleMelodySequence(stepIndex + 1);
-            }, Math.round(current.time * 1000));
+            bindDriveAudioEvents();
+
+            try {
+                audioEl.src = DRIVE_AUDIO_SOURCES[sourceIndex];
+                audioEl.load();
+                await audioEl.play();
+                isMusicPlaying = true;
+                updateMusicUI();
+            } catch (err) {
+                await tryPlayDriveAudio(sourceIndex + 1);
+            }
         }
 
         async function initAndPlayMusic() {
             hasUserInteracted = true;
-            if (isMusicPlaying) {
+            const audioEl = document.getElementById('drive-bg-audio');
+            if (!audioEl) return;
+
+            bindDriveAudioEvents();
+
+            if (audioEl.src && !audioEl.paused) {
+                isMusicPlaying = true;
                 updateMusicUI();
                 return;
             }
-            try {
-                if (typeof Tone !== 'undefined' && Tone.start) {
-                    await Tone.start();
-                }
-            } catch (e) {}
 
-            isMusicPlaying = true;
-            updateMusicUI();
-            if (melodyLoopTimer) clearTimeout(melodyLoopTimer);
-            scheduleMelodySequence(0);
+            if (audioEl.src) {
+                try {
+                    await audioEl.play();
+                    isMusicPlaying = true;
+                    updateMusicUI();
+                    return;
+                } catch (e) {}
+            }
+
+            await tryPlayDriveAudio(0);
         }
 
         function stopMusic() {
             isMusicPlaying = false;
-            if (melodyLoopTimer) {
-                clearTimeout(melodyLoopTimer);
-                melodyLoopTimer = null;
+            const audioEl = document.getElementById('drive-bg-audio');
+            if (audioEl) {
+                try {
+                    audioEl.pause();
+                } catch (e) {}
             }
             updateMusicUI();
         }
@@ -709,6 +628,15 @@
             }, { once: true, passive: true });
         });
 
+        window.addEventListener('DOMContentLoaded', () => {
+            bindDriveAudioEvents();
+            const audioEl = document.getElementById('drive-bg-audio');
+            if (audioEl && !audioEl.src) {
+                audioEl.src = DRIVE_AUDIO_SOURCES[0];
+                audioEl.load();
+            }
+        });
+
         function updateMusicUI() {
             const iconPlay = document.getElementById('icon-play');
             const iconPause = document.getElementById('icon-pause');
@@ -728,7 +656,28 @@
 
         // --- 3. WELCOME ENVELOPE & POPUP FLOW ---
         function openGreeting() {
-            initAndPlayMusic();
+            const audioEl = document.getElementById('drive-bg-audio');
+            if (audioEl) {
+                hasUserInteracted = true;
+                bindDriveAudioEvents();
+                audioEl.muted = false;
+                audioEl.volume = 1.0;
+                const playPromise = audioEl.play();
+                if (playPromise && typeof playPromise.then === 'function') {
+                    playPromise
+                        .then(() => {
+                            isMusicPlaying = true;
+                            updateMusicUI();
+                        })
+                        .catch(() => {
+                            initAndPlayMusic();
+                        });
+                } else {
+                    initAndPlayMusic();
+                }
+            } else {
+                initAndPlayMusic();
+            }
 
             const welcomeEnvelope = document.getElementById('welcome-envelope');
             const romanticPopup = document.getElementById('romantic-popup');
@@ -780,180 +729,7 @@
             }, 600);
         }
 
-        // --- 4. 3-ROW SLIDE COLLAGE GALLERY ---
-        const DRIVE_FOLDER_URL = 'https://drive.google.com/drive/folders/1vW5U_3VCxb08VifYQSA94aD7oBOHpUMh?usp=sharing';
-        const DEFAULT_COLLAGE_PHOTOS = [
-            'WhatsApp Image 2026-11-24 at 23.00.48 (1).jpeg',
-            'WhatsApp Image 2026-11-24 at 23.00.48.jpeg',
-            'WhatsApp Image 2026-11-24 at 22.35.07.jpg',
-            'WhatsApp Image 2026-11-24 at 23.00.50.jpeg',
-            'WhatsApp Image 2026-11-24 at 22.34.48.jpg',
-            'WhatsApp Image 2026-11-24 at 23.00.49.jpeg',
-            'WhatsApp Image 2026-11-24 at 22.34.48 (1).jpg',
-            'WhatsApp Image 2026-11-24 at 23.00.49 (2).jpeg',
-            'WhatsApp Image 2026-11-24 at 23.00.49 (1).jpeg',
-            'WhatsApp Image 2026-11-24 at 22.34.47 (1).jpg',
-            'WhatsApp Image 2026-11-24 at 22.34.47.jpeg'
-        ];
-        let activeCollagePhotos = [...DEFAULT_COLLAGE_PHOTOS];
-
-        // Mengonversi tautan berbagi Google Drive menjadi URL gambar langsung bila diberikan URL file spesifik
-        function normalizePhotoUrl(rawUrl) {
-            if (!rawUrl || typeof rawUrl !== 'string') return '';
-            const trimmed = rawUrl.trim();
-            const driveFileMatch = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-            if (driveFileMatch && driveFileMatch[1]) {
-                return `https://drive.google.com/uc?export=view&id=${driveFileMatch[1]}`;
-            }
-            return trimmed;
-        }
-
-        // Membuat ilustrasi kenangan cadangan agar kartu foto tetap tampil di HP saat file lokal tidak dapat dibaca
-        function buildMemoryFallbackArtwork(index = 0) {
-            const palettes = [
-                { bgDark: '#0F2542', midBlue: '#2B6CB0', lightTint: '#A3CEEE' },
-                { bgDark: '#1E3A5F', midBlue: '#4A96D4', lightTint: '#E6F2FA' },
-                { bgDark: '#16324F', midBlue: '#3182CE', lightTint: '#CCE3F5' },
-                { bgDark: '#09172B', midBlue: '#1E3A5F', lightTint: '#75B4E3' }
-            ];
-            const p = palettes[Math.abs(index) % palettes.length];
-            const sceneGraphic = `
-                <circle cx="176" cy="64" r="24" fill="${p.lightTint}" opacity="0.28"/>
-                <path d="M0 210 Q56 155 112 195 T224 175 L224 288 L0 288 Z" fill="${p.bgDark}" opacity="0.55"/>
-                <path d="M0 240 Q68 205 135 232 T224 218 L224 288 L0 288 Z" fill="#FFFFFF" opacity="0.16"/>
-                <polygon points="112,78 152,96 112,114 72,96" fill="#FFFFFF" opacity="0.85"/>
-                <path d="M90 105 v14 c0 8 44 8 44 0 v-14" fill="none" stroke="#FFFFFF" stroke-width="4" opacity="0.75"/>
-            `;
-            const svgMarkup = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 224 288"><defs><linearGradient id="g${index}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${p.bgDark}"/><stop offset="60%" stop-color="${p.midBlue}"/><stop offset="100%" stop-color="${p.lightTint}"/></linearGradient></defs><rect width="224" height="288" fill="url(#g${index})"/>${sceneGraphic}</svg>`;
-            return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgMarkup);
-        }
-
-        function initSlideGallery() {
-            const row1 = document.getElementById('collage-row-1');
-            const row2 = document.getElementById('collage-row-2');
-            const row3 = document.getElementById('collage-row-3');
-            if (!row1 || !row2 || !row3) return;
-
-            const rowsData = [
-                activeCollagePhotos.filter((_, idx) => idx % 3 === 0),
-                activeCollagePhotos.filter((_, idx) => idx % 3 === 1),
-                activeCollagePhotos.filter((_, idx) => idx % 3 === 2)
-            ];
-
-            [row1, row2, row3].forEach((rowEl, rIdx) => {
-                const items = rowsData[rIdx].length ? rowsData[rIdx] : activeCollagePhotos;
-                rowEl.innerHTML = items.map((src, itemIdx) => {
-                    const fallbackSrc = buildMemoryFallbackArtwork(rIdx * 10 + itemIdx);
-                    const normalizedSrc = normalizePhotoUrl(src);
-                    // Menggunakan URL valid (data/http) atau ilustrasi cadangan agar selalu tampil jelas di HP
-                    const displaySrc = (normalizedSrc && (normalizedSrc.startsWith('data:') || normalizedSrc.startsWith('http'))) ? normalizedSrc : fallbackSrc;
-                    return `
-                    <div onclick="handleSlideItemClick(event, this.querySelector('img').src)" style="background-image: url('${fallbackSrc}'); background-size: cover; background-position: center;" class="w-28 h-36 shrink-0 rounded-xl overflow-hidden bg-softblue-100 border border-softblue-100 shadow-sm cursor-pointer active:scale-95 transition-transform">
-                        <img src="${displaySrc}" data-fallback="${fallbackSrc}" onerror="if(this.src!==this.dataset.fallback){this.src=this.dataset.fallback;}" alt="" class="w-full h-full object-cover">
-                    </div>
-                `;
-                }).join('');
-                enableSmoothDragScroll(rowEl);
-            });
-        }
-
-        let isDraggingSlide = false;
-        let hasDraggedDistance = false;
-
-        // Mengaktifkan geser halus menggunakan mouse maupun sentuhan jari pada setiap baris slide
-        function enableSmoothDragScroll(container) {
-            if (!container || container.dataset.dragBound === 'true') return;
-            container.dataset.dragBound = 'true';
-
-            let isDown = false;
-            let startX = 0;
-            let scrollLeftStart = 0;
-
-            container.addEventListener('mousedown', (e) => {
-                isDown = true;
-                isDraggingSlide = true;
-                hasDraggedDistance = false;
-                startX = e.pageX - container.offsetLeft;
-                scrollLeftStart = container.scrollLeft;
-                container.style.scrollBehavior = 'auto';
-            });
-
-            window.addEventListener('mouseup', () => {
-                if (!isDown) return;
-                isDown = false;
-                container.style.scrollBehavior = 'smooth';
-                setTimeout(() => {
-                    isDraggingSlide = false;
-                }, 50);
-            });
-
-            container.addEventListener('mousemove', (e) => {
-                if (!isDown) return;
-                e.preventDefault();
-                const x = e.pageX - container.offsetLeft;
-                const walk = (x - startX) * 1.35;
-                if (Math.abs(walk) > 6) {
-                    hasDraggedDistance = true;
-                }
-                container.scrollLeft = scrollLeftStart - walk;
-            });
-
-            container.addEventListener('touchstart', (e) => {
-                if (!e.touches.length) return;
-                startX = e.touches[0].pageX;
-                hasDraggedDistance = false;
-                container.style.scrollBehavior = 'smooth';
-            }, { passive: true });
-
-            container.addEventListener('touchmove', (e) => {
-                if (!e.touches.length) return;
-                if (Math.abs(e.touches[0].pageX - startX) > 6) {
-                    hasDraggedDistance = true;
-                }
-            }, { passive: true });
-        }
-
-        // Membuka foto di lightbox hanya jika pengguna mengetuk tanpa menyeret slide
-        function handleSlideItemClick(event, src) {
-            if (isDraggingSlide || hasDraggedDistance) {
-                event.preventDefault();
-                return;
-            }
-            openLightboxSrc(src);
-        }
-
-        // --- 5. UPLOAD & LOCALSTORAGE PHOTO PERSISTENCE ---
-        function loadSavedCollagePhotos() {
-            try {
-                const raw = localStorage.getItem(STORAGE_COLLAGE_KEY);
-                if (!raw) return;
-                const photos = JSON.parse(raw);
-                if (Array.isArray(photos) && photos.filter(Boolean).length > 0) {
-                    activeCollagePhotos = photos.filter(Boolean);
-                    initSlideGallery();
-                }
-            } catch (e) {}
-        }
-
-        // --- 6. LIGHTBOX MODAL ---
-        function openLightboxSrc(src) {
-            const modal = document.getElementById('photo-lightbox');
-            const modalImg = document.getElementById('lightbox-img');
-            if (!src || !modal || !modalImg) return;
-
-            modalImg.src = src;
-            modal.classList.remove('hidden');
-            setTimeout(() => modal.classList.remove('opacity-0'), 20);
-        }
-
-        function closeLightbox() {
-            const modal = document.getElementById('photo-lightbox');
-            if (!modal) return;
-            modal.classList.add('opacity-0');
-            setTimeout(() => modal.classList.add('hidden'), 300);
-        }
-
-        // --- 7. PERSONAL ENVELOPE LETTER TOGGLE ---
+        // --- 4. PERSONAL ENVELOPE LETTER TOGGLE ---
         let isEnvelopeOpen = false;
         function toggleEnvelope() {
             const box = document.getElementById('envelope-box');
@@ -980,7 +756,7 @@
             }
         }
 
-        // --- 8. CONFETTI, SCROLL REVEAL & BACK TO TOP ---
+        // --- 5. CONFETTI, SCROLL REVEAL & BACK TO TOP ---
         function fireCelebrationConfetti() {
             if (typeof confetti !== 'function') return;
             try {
@@ -1017,22 +793,13 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Render slide foto kenangan segera setelah DOM siap maupun saat window selesai dimuat
-        function renderGallerySafely() {
-            try {
-                initSlideGallery();
-                loadSavedCollagePhotos();
-                checkReveal();
-            } catch (e) {}
-        }
-
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', renderGallerySafely);
+            document.addEventListener('DOMContentLoaded', checkReveal);
         } else {
-            renderGallerySafely();
+            checkReveal();
         }
 
-        window.addEventListener('load', renderGallerySafely);
+        window.addEventListener('load', checkReveal);
         window.addEventListener('scroll', checkReveal, { passive: true });
     </script>
 </body>
