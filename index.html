@@ -347,7 +347,7 @@
             </svg>
             <div class="text-left leading-tight">
                 <p class="text-[10px] font-semibold tracking-wide">Backsound</p>
-                <p id="track-subtitle" class="text-[9px] text-softblue-200">Lagu Wisuda</p>
+                <p id="track-subtitle" class="text-[9px] text-softblue-200">Di Akhir Perang</p>
             </div>
         </button>
     </div>
@@ -593,8 +593,8 @@
             }, 600);
         });
 
-        // --- 2. BACKGROUND MUSIC (YOUTUBE ORIGINAL AUDIO: https://youtu.be/ugk5pd9xgSw) ---
-        const YOUTUBE_VIDEO_ID = 'ugk5pd9xgSw';
+        // --- 2. BACKGROUND MUSIC (DI AKHIR PERANG - NADIN AMIZAH [LuvCMeimei]: https://youtu.be/G7jQQxtOMEk) ---
+        const YOUTUBE_VIDEO_ID = 'G7jQQxtOMEk';
         let ytPlayer = null;
         let isYtReady = false;
         let isMusicPlaying = false;
@@ -829,6 +829,19 @@
         ];
         let activeCollagePhotos = [...DEFAULT_COLLAGE_PHOTOS];
 
+        // Membuat ilustrasi seni SVG mandiri (tanpa data URI / file eksternal) sebagai fallback jika file lokal di HP tidak ditemukan
+        function buildMemoryFallbackArtwork(index) {
+            const palettes = [
+                ['#0F2542', '#4A96D4', '#E6F2FA'],
+                ['#1E3A5F', '#75B4E3', '#F4F9FD'],
+                ['#16325B', '#A3CEEE', '#FFFFFF'],
+                ['#09172B', '#4A96D4', '#CCE3F5']
+            ];
+            const [bgDark, midBlue, lightTint] = palettes[index % palettes.length];
+            const svgMarkup = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 224 288"><defs><linearGradient id="g${index}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${bgDark}"/><stop offset="65%" stop-color="${midBlue}"/><stop offset="100%" stop-color="${lightTint}"/></linearGradient></defs><rect width="224" height="288" fill="url(#g${index})"/><circle cx="168" cy="64" r="34" fill="#FFFFFF" fill-opacity="0.22"/><path d="M0 212 Q58 175 112 208 T224 192 L224 288 L0 288 Z" fill="#FFFFFF" fill-opacity="0.25"/><path d="M0 236 Q68 205 134 236 T224 222 L224 288 L0 288 Z" fill="${bgDark}" fill-opacity="0.35"/><path d="M112 108 L142 122 L112 136 L82 122 Z" fill="#FFFFFF" fill-opacity="0.88"/><path d="M94 130 V146 Q112 156 130 146 V130" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-opacity="0.85"/></svg>`;
+            return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgMarkup);
+        }
+
         function initSlideGallery() {
             const row1 = document.getElementById('collage-row-1');
             const row2 = document.getElementById('collage-row-2');
@@ -843,11 +856,14 @@
 
             [row1, row2, row3].forEach((rowEl, rIdx) => {
                 const items = rowsData[rIdx].length ? rowsData[rIdx] : activeCollagePhotos;
-                rowEl.innerHTML = items.map((src) => `
+                rowEl.innerHTML = items.map((src, itemIdx) => {
+                    const fallbackSrc = buildMemoryFallbackArtwork(rIdx * 10 + itemIdx);
+                    return `
                     <div onclick="handleSlideItemClick(event, this.querySelector('img').src)" class="w-28 h-36 shrink-0 rounded-xl overflow-hidden bg-softblue-100 border border-softblue-100 shadow-sm cursor-pointer active:scale-95 transition-transform">
-                        <img src="${src}" alt="" class="w-full h-full object-cover">
+                        <img src="${src}" data-fallback="${fallbackSrc}" onerror="if(this.src!==this.dataset.fallback){this.src=this.dataset.fallback;}" alt="" class="w-full h-full object-cover">
                     </div>
-                `).join('');
+                `;
+                }).join('');
                 enableSmoothDragScroll(rowEl);
             });
         }
