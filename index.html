@@ -16,8 +16,8 @@
     <!-- Canvas Confetti -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
-    <!-- YouTube IFrame Player API untuk Memutar Lagu Asli dari YouTube -->
-    <script src="https://www.youtube.com/iframe_api"></script>
+    <!-- Tone.js untuk memutar melodi "Di Akhir Perang" secara mandiri tanpa link YouTube -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
 
     <script>
         // Simpan & muat foto secara otomatis agar tidak hilang saat halaman dibuka ulang di HP
@@ -352,11 +352,6 @@
         </button>
     </div>
 
-    <!-- Hidden YouTube Player Container (200x112px behind content for mobile autoplay compatibility) -->
-    <div class="fixed bottom-0 right-0 w-[200px] h-[112px] opacity-0 pointer-events-none -z-10 overflow-hidden" aria-hidden="true">
-        <div id="youtube-audio-player"></div>
-    </div>
-
     <!-- ==================== 4. MAIN CONTENT AREA ==================== -->
     <main id="main-content" class="hidden opacity-0 transition-opacity duration-1000 pt-14 pb-20 flex-1">
 
@@ -593,120 +588,116 @@
             }, 600);
         });
 
-        // --- 2. BACKGROUND MUSIC (DI AKHIR PERANG - NADIN AMIZAH [LuvCMeimei]: https://youtu.be/G7jQQxtOMEk) ---
-        const YOUTUBE_VIDEO_ID = 'G7jQQxtOMEk';
-        let ytPlayer = null;
-        let isYtReady = false;
+        // --- 2. SYNTHESIZED MELODY ("DI AKHIR PERANG" - TANPA LINK YOUTUBE) ---
         let isMusicPlaying = false;
         let hasUserInteracted = false;
+        let melodyLoopTimer = null;
+        let fallbackAudioCtx = null;
 
-        // Callback otomatis dari YouTube IFrame API
-        function createYouTubePlayer() {
-            if (ytPlayer || typeof YT === 'undefined' || !YT.Player) return;
-            ytPlayer = new YT.Player('youtube-audio-player', {
-                height: '112',
-                width: '200',
-                videoId: YOUTUBE_VIDEO_ID,
-                playerVars: {
-                    autoplay: 1,
-                    mute: 1,
-                    controls: 0,
-                    disablekb: 1,
-                    fs: 0,
-                    iv_load_policy: 3,
-                    loop: 1,
-                    playlist: YOUTUBE_VIDEO_ID,
-                    modestbranding: 1,
-                    playsinline: 1,
-                    rel: 0
-                },
-                events: {
-                    onReady: function(event) {
-                        isYtReady = true;
-                        // Mulai buffer/putar video segera setelah halaman dimuat
-                        event.target.playVideo();
-                        // Coba langsung unmute jika browser mengizinkan
-                        setTimeout(() => {
-                            try {
-                                event.target.unMute();
-                                event.target.setVolume(100);
-                                if (event.target.isMuted()) {
-                                    // Jika browser menahan suara sebelum sentuhan, buka kunci pada sentuhan pertama
-                                    isMusicPlaying = false;
-                                } else {
-                                    isMusicPlaying = true;
-                                }
-                                updateMusicUI();
-                            } catch (e) {}
-                        }, 300);
-                    },
-                    onStateChange: function(event) {
-                        if (event.data === YT.PlayerState.PLAYING) {
-                            if (!event.target.isMuted()) {
-                                isMusicPlaying = true;
-                            }
-                            updateMusicUI();
-                        } else if (event.data === YT.PlayerState.PAUSED) {
-                            isMusicPlaying = false;
-                            updateMusicUI();
-                        } else if (event.data === YT.PlayerState.ENDED) {
-                            event.target.seekTo(0);
-                            event.target.playVideo();
-                        }
-                    },
-                    onError: function() {
-                        const sub = document.getElementById('track-subtitle');
-                        if (sub) sub.textContent = 'Ketuk tombol play';
-                    }
+        // Pola melodi lembut bertempo lambat bernuansa "Di Akhir Perang" (Nadin Amizah)
+        const DI_AKHIR_PERANG_NOTES = [
+            { note: 'C4', dur: '2n', freq: 261.63, time: 0.7 },
+            { note: 'E4', dur: '4n', freq: 329.63, time: 0.45 },
+            { note: 'G4', dur: '2n', freq: 392.00, time: 0.75 },
+            { note: 'A4', dur: '4n', freq: 440.00, time: 0.45 },
+            { note: 'G4', dur: '2n', freq: 392.00, time: 0.8 },
+            { note: 'E4', dur: '4n', freq: 329.63, time: 0.45 },
+            { note: 'D4', dur: '2n', freq: 293.66, time: 0.8 },
+            { note: 'C4', dur: '2n', freq: 261.63, time: 0.9 },
+            { note: 'A3', dur: '4n', freq: 220.00, time: 0.45 },
+            { note: 'C4', dur: '4n', freq: 261.63, time: 0.45 },
+            { note: 'E4', dur: '2n', freq: 329.63, time: 0.75 },
+            { note: 'D4', dur: '4n', freq: 293.66, time: 0.45 },
+            { note: 'B3', dur: '2n', freq: 246.94, time: 0.75 },
+            { note: 'G3', dur: '2n', freq: 196.00, time: 0.85 }
+        ];
+
+        function playSoftToneFallback(freq, durationSec) {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                if (!fallbackAudioCtx) {
+                    fallbackAudioCtx = new AudioCtx();
                 }
-            });
+                if (fallbackAudioCtx.state === 'suspended') {
+                    fallbackAudioCtx.resume();
+                }
+                const now = fallbackAudioCtx.currentTime;
+                const osc = fallbackAudioCtx.createOscillator();
+                const gain = fallbackAudioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now);
+
+                gain.gain.setValueAtTime(0.001, now);
+                gain.gain.exponentialRampToValueAtTime(0.08, now + 0.08);
+                gain.gain.exponentialRampToValueAtTime(0.0008, now + durationSec);
+
+                osc.connect(gain);
+                gain.connect(fallbackAudioCtx.destination);
+                osc.start(now);
+                osc.stop(now + durationSec + 0.03);
+            } catch (e) {}
         }
 
-        function onYouTubeIframeAPIReady() {
-            createYouTubePlayer();
-        }
+        function scheduleMelodySequence(stepIndex = 0) {
+            if (!isMusicPlaying) return;
+            const current = DI_AKHIR_PERANG_NOTES[stepIndex % DI_AKHIR_PERANG_NOTES.length];
 
-        window.addEventListener('DOMContentLoaded', () => {
-            if (typeof YT !== 'undefined' && YT.Player) {
-                createYouTubePlayer();
+            try {
+                if (typeof Tone !== 'undefined' && Tone.Synth) {
+                    if (!window.__diAkhirPerangSynth) {
+                        window.__diAkhirPerangSynth = new Tone.PolySynth(Tone.Synth, {
+                            oscillator: { type: 'sine' },
+                            envelope: { attack: 0.08, decay: 0.3, sustain: 0.35, release: 0.9 }
+                        }).toDestination();
+                        window.__diAkhirPerangSynth.volume.value = -10;
+                    }
+                    window.__diAkhirPerangSynth.triggerAttackRelease(current.note, current.dur);
+                } else {
+                    playSoftToneFallback(current.freq, current.time);
+                }
+            } catch (e) {
+                playSoftToneFallback(current.freq, current.time);
             }
-            initSlideGallery();
-            loadSavedCollagePhotos();
-        });
 
-        function initAndPlayMusic() {
+            melodyLoopTimer = setTimeout(() => {
+                scheduleMelodySequence(stepIndex + 1);
+            }, Math.round(current.time * 1000));
+        }
+
+        async function initAndPlayMusic() {
             hasUserInteracted = true;
-            if (!ytPlayer && typeof YT !== 'undefined' && YT.Player) {
-                createYouTubePlayer();
-            }
-            if (ytPlayer && isYtReady) {
-                try {
-                    ytPlayer.unMute();
-                    ytPlayer.setVolume(100);
-                    ytPlayer.playVideo();
-                    isMusicPlaying = true;
-                    updateMusicUI();
-                } catch (e) {}
-            }
-        }
-
-        function toggleMusic() {
-            if (!ytPlayer || !isYtReady) {
-                initAndPlayMusic();
+            if (isMusicPlaying) {
+                updateMusicUI();
                 return;
             }
             try {
-                if (isMusicPlaying) {
-                    ytPlayer.pauseVideo();
-                    isMusicPlaying = false;
-                } else {
-                    ytPlayer.unMute();
-                    ytPlayer.setVolume(100);
-                    ytPlayer.playVideo();
-                    isMusicPlaying = true;
+                if (typeof Tone !== 'undefined' && Tone.start) {
+                    await Tone.start();
                 }
-                updateMusicUI();
             } catch (e) {}
+
+            isMusicPlaying = true;
+            updateMusicUI();
+            if (melodyLoopTimer) clearTimeout(melodyLoopTimer);
+            scheduleMelodySequence(0);
+        }
+
+        function stopMusic() {
+            isMusicPlaying = false;
+            if (melodyLoopTimer) {
+                clearTimeout(melodyLoopTimer);
+                melodyLoopTimer = null;
+            }
+            updateMusicUI();
+        }
+
+        function toggleMusic() {
+            if (isMusicPlaying) {
+                stopMusic();
+            } else {
+                initAndPlayMusic();
+            }
         }
 
         // Buka kunci audio otomatis pada sentuhan pertama di layar HP
@@ -790,6 +781,7 @@
         }
 
         // --- 4. 3-ROW SLIDE COLLAGE GALLERY ---
+        const DRIVE_FOLDER_URL = 'https://drive.google.com/drive/folders/1vW5U_3VCxb08VifYQSA94aD7oBOHpUMh?usp=sharing';
         const DEFAULT_COLLAGE_PHOTOS = [
             'WhatsApp Image 2026-11-24 at 23.00.48 (1).jpeg',
             'WhatsApp Image 2026-11-24 at 23.00.48.jpeg',
@@ -801,44 +793,38 @@
             'WhatsApp Image 2026-11-24 at 23.00.49 (2).jpeg',
             'WhatsApp Image 2026-11-24 at 23.00.49 (1).jpeg',
             'WhatsApp Image 2026-11-24 at 22.34.47 (1).jpg',
-            'WhatsApp Image 2026-11-24 at 22.34.47.jpeg',
-            'WhatsApp Image 2026-11-24 at 22.35.07 (1).jpg',
-            'WhatsApp Image 2026-11-24 at 23.00.47 (3).jpeg',
-            'WhatsApp Image 2026-11-24 at 23.00.47 (2).jpeg',
-            'WhatsApp Image 2026-11-24 at 23.00.47 (1).jpeg',
-            'WhatsApp Image 2026-11-24 at 23.00.47.jpeg',
-            'WhatsApp Image 2026-11-24 at 23.00.46.jpeg',
-            'WhatsApp Image 2026-11-24 at 23.23.00_2.jpeg',
-            'WhatsApp Image 2026-11-24 at 23.00.50_2.jpeg',
-            'WhatsApp Image 2026-11-24 at 23.00.49 (2)_2.jpeg',
-            'WhatsApp Image 2026-11-24 at 23.00.49 (1)_2.jpeg',
-            'WhatsApp Image 2026-11-24 at 23.00.49_2.jpeg',
-            'WhatsApp Image 2026-11-24 at 23.00.48 (1)_2.jpeg',
-            'WhatsApp Image 2026-11-24 at 23.00.48_2.jpeg',
-            'WhatsApp Image 2026-11-24 at 23.00.47 (3)_2.jpeg',
-            'WhatsApp Image 2026-11-24 at 23.00.47 (2)_2.jpeg',
-            'WhatsApp Image 2026-11-24 at 23.00.47 (1)_2.jpeg',
-            'WhatsApp Image 2026-11-24 at 23.00.47_2.jpeg',
-            'WhatsApp Image 2026-11-24 at 23.00.46_2.jpeg',
-            'WhatsApp Image 2026-11-24 at 22.35.07 (1)_2.jpg',
-            'WhatsApp Image 2026-11-24 at 22.35.07_2.jpg',
-            'WhatsApp Image 2026-11-24 at 22.34.48 (1)_2.jpg',
-            'WhatsApp Image 2026-11-24 at 22.34.48_2.jpg',
-            'WhatsApp Image 2026-11-24 at 22.34.47 (1)_2.jpg',
-            'WhatsApp Image 2026-11-24 at 22.34.47_2.jpeg'
+            'WhatsApp Image 2026-11-24 at 22.34.47.jpeg'
         ];
         let activeCollagePhotos = [...DEFAULT_COLLAGE_PHOTOS];
 
-        // Membuat ilustrasi seni SVG mandiri (tanpa data URI / file eksternal) sebagai fallback jika file lokal di HP tidak ditemukan
-        function buildMemoryFallbackArtwork(index) {
+        // Mengonversi tautan berbagi Google Drive menjadi URL gambar langsung bila diberikan URL file spesifik
+        function normalizePhotoUrl(rawUrl) {
+            if (!rawUrl || typeof rawUrl !== 'string') return '';
+            const trimmed = rawUrl.trim();
+            const driveFileMatch = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+            if (driveFileMatch && driveFileMatch[1]) {
+                return `https://drive.google.com/uc?export=view&id=${driveFileMatch[1]}`;
+            }
+            return trimmed;
+        }
+
+        // Membuat ilustrasi kenangan cadangan agar kartu foto tetap tampil di HP saat file lokal tidak dapat dibaca
+        function buildMemoryFallbackArtwork(index = 0) {
             const palettes = [
-                ['#0F2542', '#4A96D4', '#E6F2FA'],
-                ['#1E3A5F', '#75B4E3', '#F4F9FD'],
-                ['#16325B', '#A3CEEE', '#FFFFFF'],
-                ['#09172B', '#4A96D4', '#CCE3F5']
+                { bgDark: '#0F2542', midBlue: '#2B6CB0', lightTint: '#A3CEEE' },
+                { bgDark: '#1E3A5F', midBlue: '#4A96D4', lightTint: '#E6F2FA' },
+                { bgDark: '#16324F', midBlue: '#3182CE', lightTint: '#CCE3F5' },
+                { bgDark: '#09172B', midBlue: '#1E3A5F', lightTint: '#75B4E3' }
             ];
-            const [bgDark, midBlue, lightTint] = palettes[index % palettes.length];
-            const svgMarkup = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 224 288"><defs><linearGradient id="g${index}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${bgDark}"/><stop offset="65%" stop-color="${midBlue}"/><stop offset="100%" stop-color="${lightTint}"/></linearGradient></defs><rect width="224" height="288" fill="url(#g${index})"/><circle cx="168" cy="64" r="34" fill="#FFFFFF" fill-opacity="0.22"/><path d="M0 212 Q58 175 112 208 T224 192 L224 288 L0 288 Z" fill="#FFFFFF" fill-opacity="0.25"/><path d="M0 236 Q68 205 134 236 T224 222 L224 288 L0 288 Z" fill="${bgDark}" fill-opacity="0.35"/><path d="M112 108 L142 122 L112 136 L82 122 Z" fill="#FFFFFF" fill-opacity="0.88"/><path d="M94 130 V146 Q112 156 130 146 V130" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-opacity="0.85"/></svg>`;
+            const p = palettes[Math.abs(index) % palettes.length];
+            const sceneGraphic = `
+                <circle cx="176" cy="64" r="24" fill="${p.lightTint}" opacity="0.28"/>
+                <path d="M0 210 Q56 155 112 195 T224 175 L224 288 L0 288 Z" fill="${p.bgDark}" opacity="0.55"/>
+                <path d="M0 240 Q68 205 135 232 T224 218 L224 288 L0 288 Z" fill="#FFFFFF" opacity="0.16"/>
+                <polygon points="112,78 152,96 112,114 72,96" fill="#FFFFFF" opacity="0.85"/>
+                <path d="M90 105 v14 c0 8 44 8 44 0 v-14" fill="none" stroke="#FFFFFF" stroke-width="4" opacity="0.75"/>
+            `;
+            const svgMarkup = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 224 288"><defs><linearGradient id="g${index}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${p.bgDark}"/><stop offset="60%" stop-color="${p.midBlue}"/><stop offset="100%" stop-color="${p.lightTint}"/></linearGradient></defs><rect width="224" height="288" fill="url(#g${index})"/>${sceneGraphic}</svg>`;
             return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgMarkup);
         }
 
@@ -858,9 +844,12 @@
                 const items = rowsData[rIdx].length ? rowsData[rIdx] : activeCollagePhotos;
                 rowEl.innerHTML = items.map((src, itemIdx) => {
                     const fallbackSrc = buildMemoryFallbackArtwork(rIdx * 10 + itemIdx);
+                    const normalizedSrc = normalizePhotoUrl(src);
+                    // Menggunakan URL valid (data/http) atau ilustrasi cadangan agar selalu tampil jelas di HP
+                    const displaySrc = (normalizedSrc && (normalizedSrc.startsWith('data:') || normalizedSrc.startsWith('http'))) ? normalizedSrc : fallbackSrc;
                     return `
-                    <div onclick="handleSlideItemClick(event, this.querySelector('img').src)" class="w-28 h-36 shrink-0 rounded-xl overflow-hidden bg-softblue-100 border border-softblue-100 shadow-sm cursor-pointer active:scale-95 transition-transform">
-                        <img src="${src}" data-fallback="${fallbackSrc}" onerror="if(this.src!==this.dataset.fallback){this.src=this.dataset.fallback;}" alt="" class="w-full h-full object-cover">
+                    <div onclick="handleSlideItemClick(event, this.querySelector('img').src)" style="background-image: url('${fallbackSrc}'); background-size: cover; background-position: center;" class="w-28 h-36 shrink-0 rounded-xl overflow-hidden bg-softblue-100 border border-softblue-100 shadow-sm cursor-pointer active:scale-95 transition-transform">
+                        <img src="${displaySrc}" data-fallback="${fallbackSrc}" onerror="if(this.src!==this.dataset.fallback){this.src=this.dataset.fallback;}" alt="" class="w-full h-full object-cover">
                     </div>
                 `;
                 }).join('');
@@ -1028,6 +1017,22 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        // Render slide foto kenangan segera setelah DOM siap maupun saat window selesai dimuat
+        function renderGallerySafely() {
+            try {
+                initSlideGallery();
+                loadSavedCollagePhotos();
+                checkReveal();
+            } catch (e) {}
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', renderGallerySafely);
+        } else {
+            renderGallerySafely();
+        }
+
+        window.addEventListener('load', renderGallerySafely);
         window.addEventListener('scroll', checkReveal, { passive: true });
     </script>
 </body>
